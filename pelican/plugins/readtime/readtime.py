@@ -1,13 +1,14 @@
 import re
 import math
+import logging
 
 from pelican import signals
 from html.parser import HTMLParser  #use html.parser for Python 3.6
 
+log = logging.getLogger(__name__)
 
 # http://en.wikipedia.org/wiki/Words_per_minute
-WPM = 230.0
-
+WPM = 1.0
 
 class MLStripper(HTMLParser):
     def __init__(self):
@@ -15,10 +16,21 @@ class MLStripper(HTMLParser):
 				# super class's '__init__' method
         self.reset()
         self.fed = []
+        self.ignore_depth = 0
+
+    def handle_starttag(self, tag, _):
+        if tag.lower() in IGNORE_TAGS:
+            self.ignore_depth += 1
+
+    def handle_endtag(self, tag):
+        if tag.lower() in IGNORE_TAGS:
+            self.ignore_depth -= 1
 
     #this method is called whenever a 'data' is encountered.
     def handle_data(self, d):
-        self.fed.append(d)
+        # Only keep data that is not within ignore tags
+        if self.ignore_depth == 0:
+            self.fed.append(d)
 
     # join all content word into one long sentence for further processing
     def get_data(self):
@@ -49,7 +61,11 @@ def calculate_readtime(content_object):
             "minutes": minutes,
         }
 
+def initialize_readtime(pelican_object):
+    global IGNORE_TAGS
+    IGNORE_TAGS = pelican_object.settings.get('READTIME_IGNORE_TAGS', [])
 
 def register():
+    signals.initialized.connect(initialize_readtime)
     signals.content_object_init.connect(calculate_readtime)   # connect with 'content_object_init' signal.
 
