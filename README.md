@@ -16,6 +16,10 @@ This plugin only uses standard modules(re, html, math, etc), so no extra module 
 ```python
     PLUGINS=[ ... , 'pelican-readtime']
 ```
+Optionally, you can also configure tags in the content to ignore, such as ingoring any content in inlined SVGs:
+```
+    READTIME_IGNORE_TAGS = ['svg']
+```
 Then you can put the following code in whichever template you what, like *article.html*. 
 ```html
     {% if article.readtime %}
